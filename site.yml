@@ -2,15 +2,17 @@
 
 - hosts: all
   become: true
-  tasks:
+  pre_tasks:
 
   - name: install updates (Fedora)
+    tags: always
     dnf:
       update_only: yes
       update_cache: yes
     when: ansible_distribution == "Fedora"
 
   - name: install updates (Ubuntu)
+    tags: always
     apt: 
       upgrade: dist
       update_cache: yes
@@ -21,6 +23,7 @@
   tasks:
 
   - name: install apache and php for Ubuntu servers
+    tags: apache,apache2,ubuntu
     apt:
       name:
         - apache2
@@ -29,6 +32,7 @@
     when: ansible_distribution == "Ubuntu"
 
   - name: install apache and php for Fedora servers
+    tags: apache,fedora,httpd
     dnf:
       name:
         - httpd
@@ -36,18 +40,28 @@
       state: latest
     when: ansible_distribution == "Fedora"
 
+  - name: copy default html file for site
+    tags: apache, apache2, httpd
+    copy:
+      src: default_site.html
+      dest: /var/www/html/index.html
+      owner: root
+      group: root
+      mode: 0644
 
 - hosts: db_servvers
   become: true
   tasks:
 
   - name: install mariadb package (Fedora)
+    tags: fedora,db,mariadb
     dnf:
       name: mariadb
       state: latest
     when: ansible_distribution == "Fedora"
 
   - name: install mariadb package (Ubuntu)
+    tags: db,mariadb,ubuntu
     apt:
       name: mariadb-server
       state: latest
@@ -58,6 +72,7 @@
   tasks:
 
   - name: install samba package
+    tags: samba
     package: 
       name: samba
       state: latest
