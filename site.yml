@@ -4,19 +4,45 @@
   become: true
   pre_tasks:
 
-  - name: install updates (Fedora)
+  - name: update repo cache updates (Fedora)
     tags: always
     dnf:
-      update_only: yes
       update_cache: yes
+    changed_when: false
     when: ansible_distribution == "Fedora"
 
-  - name: install updates (Ubuntu)
+  - name: update repo cache (Ubuntu)
     tags: always
     apt: 
-      upgrade: dist
       update_cache: yes
+    changed_when: false
     when: ansible_distribution == "Ubuntu"
+
+- hosts: all
+  become: true
+  tasks:
+
+    - name: add ssh key for simone
+      tags: always
+      authorized_key:
+        user: simone
+        key: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIK5Q0oBPWk6Te6p7AvZAJuWv9i4DKtizm42SSSpv2rYp ansible"
+
+- hosts: workstations
+  become: true
+  tasks:
+    - name: install unzip
+      package:
+        name: unzip
+
+    - name: instal terraform
+      unarchive:
+        src: https://releases.hashicorp.com/terraform/0.12.28/terraform_0.12.28_linux_amd64.zip
+        dest: /usr/local/bin
+        remote_src: yes
+        mode: 0755
+        owner: root
+        group: root
 
 - hosts: web_servers
   become: true
@@ -38,6 +64,14 @@
         - httpd
         - php
       state: latest
+    when: ansible_distribution == "Fedora"
+
+  - name: start httpd (fedora)
+    tags: apache,fedora,httpd
+    service:  
+      name: httpd
+      state: started
+      enabled: yes
     when: ansible_distribution == "Fedora"
 
   - name: copy default html file for site
